@@ -1,0 +1,30 @@
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: service-dashboard-filter
+  namespace: tools
+spec:
+  workloadSelector:
+    labels:
+      app: service-dashboard
+  configPatches:
+    - applyTo: HTTP_FILTER
+      match:
+        context: SIDECAR_INBOUND
+        listener:
+          portNumber: 5000
+          filterChain:
+            filter:
+              name: envoy.filters.network.http_connection_manager
+              subFilter:
+                name: envoy.filters.http.router
+      patch:
+        operation: INSERT_BEFORE
+        value:
+#          name: istio.basic_auth
+          name: istio.oidc
+          config_discovery:
+            config_source:
+              ads: {}
+              initial_fetch_timeout: 0s
+            type_urls: [ "type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm"]
